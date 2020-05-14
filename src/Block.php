@@ -7,6 +7,21 @@ use Illuminate\Support\Str;
 
 abstract class Block extends Composer
 {
+
+    /**
+     * block ID.
+     *
+     * @var string
+     */
+    public $id;
+
+    /**
+     * Current position inside a loop of blocks.
+     *
+     * @var int
+     */
+    public static $position = 0;
+
     /**
      * The block properties.
      *
