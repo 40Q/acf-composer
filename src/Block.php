@@ -153,8 +153,8 @@ abstract class Block extends Composer
             return;
         }
 
-        if (! empty($this->name) && empty($this->slug)) {
-            $this->slug = Str::slug($this->name);
+        if ( empty($this->slug) ) {
+            $this->slug = $this->slug();
         }
 
         if (empty($this->namespace)) {
@@ -202,12 +202,14 @@ abstract class Block extends Composer
      */
     public function render($block, $content = '', $preview = false, $post = 0)
     {
+        $this->set_id();
+
         $this->block = (object) $block;
         $this->content = $content;
         $this->preview = $preview;
         $this->post = $post;
         $this->classes = collect([
-            'slug' => Str::start(Str::slug($this->block->title), 'wp-block-'),
+            'slug' => Str::start(Str::slug($this->block->title), 'b-'),
             'align' => ! empty($this->block->align) ? Str::start($this->block->align, 'align') : false,
             'classes' => $this->block->className ?? false,
         ])->filter()->implode(' ');
@@ -227,4 +229,37 @@ abstract class Block extends Composer
     {
         //
     }
+
+    /**
+     * Get block slug based on the Class name.
+     *
+     * @return string
+     */
+    public function slug()
+    {
+        return str_replace('app-blocks-', '', $this->from_camel_case ( get_class( $this ) ) );
+    }
+
+    public function from_camel_case($input) {
+        preg_match_all('!([A-Z][A-Z0-9]*(?=$|[A-Z][a-z0-9])|[A-Za-z][a-z0-9]+)!', $input, $matches);
+        $ret = $matches[0];
+        foreach ($ret as &$match) {
+            $match = $match == strtoupper($match) ? strtolower($match) : lcfirst($match);
+        }
+        return implode('-', $ret);
+    }
+
+    /**
+     * Set Block ID
+     * Return an ID if set or the block position
+     *
+     * @return void
+     */
+    public function set_id()
+    {
+
+        $this->id = 'block-' . self::$position++;
+    }
+
+
 }
