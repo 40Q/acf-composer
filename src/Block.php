@@ -4,6 +4,7 @@ namespace Log1x\AcfComposer;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use StoutLogic\AcfBuilder\FieldsBuilder;
 
 abstract class Block extends Composer
 {
@@ -189,6 +190,39 @@ abstract class Block extends Composer
                 ]);
             }
         });
+
+        // Instantiate Global Field
+        // We should bring it from another place
+        $globalFields = new FieldsBuilder('global_fields');
+
+        $globalFields
+            ->addTab('design')
+                ->addText('custom_classes')
+                ->addText('custom_id');
+
+        $globalFieldsBuild = $globalFields->build();
+        $globalFieldsArray = $globalFieldsBuild['fields'];
+
+        // Replace keys (This has to be improved)
+        $block_key = str_replace('group_', '', $this->fields['key']);
+        $global_key = str_replace('group_', '', $globalFieldsBuild['key']);
+
+        array_walk_recursive($globalFieldsArray, function (&$val) use ($global_key, $block_key) {
+            $val = str_replace($global_key, $block_key, $val);
+        });
+
+        // Find the position in the array where the design tab is located
+        $design_tab_pos = array_search('design_tab', array_column($this->fields['fields'], 'name'));
+
+        // If there isn't a design tab, merge the global settings, else append to the beginning of the tab
+        if( !$design_tab_pos ) {
+            $this->fields['fields'] = array_merge( $this->fields['fields'], $globalFieldsArray );
+        } else {
+            $globalFieldsArray = array_filter($globalFieldsArray, function ($var) {
+                return ($var['name'] !== 'design_tab');
+            });
+            array_splice( $this->fields['fields'], $design_tab_pos + 1, 0, $globalFieldsArray );
+        }
     }
 
     /**
