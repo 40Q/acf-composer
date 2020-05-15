@@ -54,8 +54,7 @@ class Composer
         $globalFields
             ->addTab('design')
                 ->addText('custom_classes')
-                ->addText('custom_id')
-                ->addTrueFalse('full_screen');
+                ->addText('custom_id');
 
         $globalFieldsBuild = $globalFields->build();
         $globalFieldsArray = $globalFieldsBuild['fields'];
