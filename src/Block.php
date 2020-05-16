@@ -191,26 +191,29 @@ abstract class Block extends Composer
             }
         });
 
-        if( $this->app->config->get('acf.globalfields.fields') ) {
-            // Replace keys (This has to be improved)
-            $block_key = str_replace('group_', '', $this->fields['key']);
-            $global_key = str_replace('group_', '', $this->app->config->get('acf.globalfields.key'));
+        if( $globalfields = $this->app->config->get('acf.globalfields') ) {
 
-            array_walk_recursive($this->app->config->get('acf.globalfields.fields'), function (&$val) use ($global_key, $block_key) {
-                $val = str_replace($global_key, $block_key, $val);
-            });
+            foreach( $globalfields as $key => $global ) {
+                // Replace keys (This has to be improved)
+                $block_key = str_replace('group_', '', $this->fields['key']);
+                $global_key = str_replace('group_', '', $global['key']);
 
-            // Find the position in the array where the design tab is located
-            $design_tab_pos = array_search('design_tab', array_column($this->fields['fields'], 'name'));
-
-            // If there isn't a design tab, merge the global settings, else append to the beginning of the tab
-            if( !$design_tab_pos ) {
-                $this->fields['fields'] = array_merge( $this->fields['fields'], $this->app->config->get('acf.globalfields.fields') );
-            } else {
-                $global_array = array_filter($this->app->config->get('acf.globalfields.fields'), function ($var) {
-                    return ($var['name'] !== 'design_tab');
+                array_walk_recursive($global['fields'], function (&$val) use ($global_key, $block_key) {
+                    $val = str_replace($global_key, $block_key, $val);
                 });
-                array_splice( $this->fields['fields'], $design_tab_pos + 1, 0, $global_array );
+
+                // Find the position in the array where the design tab is located
+                $design_tab_pos = array_search($key, array_column($this->fields['fields'], 'name'));
+
+                // If there isn't a design tab, merge the global settings, else append to the beginning of the tab
+                if( !$design_tab_pos ) {
+                    $this->fields['fields'] = array_merge( $this->fields['fields'], $global['fields']);
+                } else {
+                    $global_array = array_filter($global['fields'], function ($var) use ($key) {
+                        return ($var['name'] !== $key);
+                    });
+                    array_splice( $this->fields['fields'], $design_tab_pos + 1, 0, $global_array );
+                }
             }
         }
     }
